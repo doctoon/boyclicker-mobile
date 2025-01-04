@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Embed Tags -->
+    <meta content="boyclicker" property="og:title">
+    <meta content="click the boykissr (1.6)" property="og:description">
+    <meta content="https://i.ibb.co/yRqyFS9/thumbnail.png" property="og:image">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#ff0015">
+    <meta name="twitter:image" content="https://i.ibb.co/fDNQ2QD/kisserstatic.png">
+    <!-- Styling -->
+    <title>boyclicker</title>
+    <link rel="icon" href="boy.ico">
+    <style>
+        @font-face {
+            font-family: 'Comic Sans Web';
+            src: url('ComicSans.woff2') format('woff2'),url('ComicSans.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        body { background-color: #fcfefc; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; user-select: none; overflow: hidden; font-family: 'Comic Sans MS', 'Comic Sans Web'}
+        #counter, #multiplier-text, #fun-text-container, #dialogueBox { text-align: center; }
+        #multiplier-text { font-weight: bold; transition: transform 0.2s ease-in-out, opacity 0.3s ease; }
+        #counter { font-size: 30px; margin-bottom: 20px; }
+        #multiplier-text { font-size: 25px; color: #ff1493; margin-top: 10px; }
+        #fun-text-container { margin-top: 20px; font-size: 30px; }
+        .fun-text { font-size: 25px; color: #ff1493; font-weight: bold; opacity: 0; position: absolute; transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
+        #clickable-gif, .falling-gif { cursor: pointer; transition: transform 0.2s ease; }
+        #clickable-gif { width: 200px; user-select: none; -webkit-user-drag: none; transform-origin: center; }
+        .falling-gif { position: absolute; width: 100px; }
+        #progress-bar-container { width: 100%; height: 10px; background-color: #a67c00; display: none; position: fixed; top: 0; left: 0; }
+        #progress-bar { width: 0%; height: 100%; background-color: #ffdc73; transition: width 1s linear; }
+        #shop { margin-top: 20px; text-align: center; }
+        .center-container { display: flex; justify-content: center; position: relative; width: 100%; }
+        #dialogueBox { display: flex; flex-direction: column; align-items: center; font-size: 26px; color: white; position: fixed; bottom: 100px; width: 100%; background-color: rgba(0, 0, 0, 0.35); padding: 10px; }
+        #characterName { font-size: 18px; margin: 0; color: #d8d8d8; }
+        #dialogueText { font-size: 22px; margin: 0; color: white; }
+        /* MOBILE STYLES */
+        #clickable-gif {-webkit-tap-highlight-color: transparent; }
+        @media (max-width:768px) {
+            #counter, .falling-gif {overflow: hidden;}
+            #dialogueBox {position:relative; top:25%;}
+            #dialogueText {font-size: 16px;}
+            .shop-container {position:relative; top:-12%;}
+            #play-music-button, #mute-music-button {position:relative; top:-13%;}
+            #main-container {position:relative; top:1%;}
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <div id="counter">cliks: 0</div>
+        <div class="center-container">
+            <img id="clickable-gif" src="kisserstatic.png" alt="Click me!">
+        </div>
+        <div id="multiplier-text">mutlipler: x1</div>
+    </div>
+    <div id="fun-text-container"><div id="fun-text" class="fun-text">:3</div></div>
+    <div id="progress-bar-container"><div id="progress-bar"></div></div>
+    <div id="dialogueBox">
+        <p id="characterName">Narrator</p>
+        <p id="dialogueText">boyclicker; created by @doctoon on discord :3</p>
+    </div>
+    <script>
+        // variables
+        let counter = 0, clickMultiplier = 1, autoClickers = 0;
+        let effectTimer = 0;
+        let effectActive = false;
+        let autoClickerInterval = null;
+        let isAutoClickerRunning = false;
+        let autoClickerAmount = 0;
+        let musicPlays = 0;
+        let gifSrc = "kisser.gif", imgSrc = "kisserstatic.png";
+        let audioPlayed = false;
+        const gif = document.getElementById('clickable-gif');
+        const counterText = document.getElementById('counter');
+        const funText = document.getElementById('fun-text');
+        const multiplierText = document.getElementById('multiplier-text');
+        const audio = new Audio('meow.mp3');
+        const funTexts = [":3", ":33", "O//O", ">w<", "uwuuuu :3", ":D", "mrrp~ :3", "nya >w<", "OwO", "<3", "yayyyy", ":333333"];
+        const progressBarContainer = document.getElementById('progress-bar-container');
+        const progressBar = document.getElementById('progress-bar');
+        const audio2 = new Audio('bgm.mp3');
+        const playButton = document.createElement('button');
+        const muteButton = document.createElement('button');
+        audio.load();
+        // background music
+        audio2.loop = true;
+        audio2.volume = 0.5;
+        playButton.textContent = 'pley musik';
+        playButton.style.cursor = 'pointer';
+        playButton.id = 'play-music-button';
+        document.body.appendChild(playButton);
+        muteButton.textContent = 'mute :c';
+        muteButton.id = 'mute-music-button';
+        muteButton.style.display = 'none';
+        muteButton.style.cursor = 'pointer';
+        document.body.appendChild(muteButton);
+        playButton.addEventListener('click', (event) => {
+            checkElementClickAchievements(event.target.id);
+            musicPlays++;
+            if (musicPlays === 1) { document.getElementById("dialogueText").innerText = 'the boykisser starts humming along with the music... its oddly soothing.' ; musicPlays = 0; document.getElementById("dialogueText").style.color = "#FFFFFF"}
+            audio2.play();
+            playButton.style.display = 'none';
+            muteButton.style.display = 'inline';
+        });
+        muteButton.addEventListener('click', () => {
+            audio2.muted = !audio2.muted;
+            muteButton.textContent = audio2.muted ? 'unmute :3' : 'mute :c';
+        });
+        // click thing
+        gif.addEventListener('click', e => {
+            const clickAudio = new Audio('click.mp3'); 
+            clickAudio.play();
+            counter += 1 * clickMultiplier;
+            checkAchievements(counter);
+            let displayCounter = counter.toFixed(3);
+            if (displayCounter.endsWith('.000')) displayCounter = displayCounter.replace('.000', '');
+            else displayCounter = displayCounter.replace(/(\.0+|(?<=\.\d)0+)$/, '');
+            counterText.innerHTML = `cliks: ${displayCounter}<br>${counter >= 100 ? `:${'3'.repeat(Math.min(Math.floor(counter / 100), 10))}` : ''}`;
+            if (currentMilestone < milestones.length && counter >= milestones[currentMilestone]) {
+                document.getElementById("dialogueText").innerText = dialogues[currentMilestone];
+                document.getElementById("dialogueText").style.color = "#FFFFFF"
+                currentMilestone++;
+            }
+            scaleAndRotateEffect(e);
+            gif.src = "";
+            updateStyles();
+            if (counter > 1000 || goldenClicks > 32) {if (!audioPlayed) {audio.play(); audioPlayed = true;}} else;
+            setTimeout(() => {gif.src = gifSrc;}, 10);
+            setTimeout(() => {gif.src = imgSrc;}, 720);
+            if (Math.random() < 0.05) animateFunText();
+        });
+        function updateStyles() {
+            if (counter > 1000 || goldenClicks > 32) {
+                gifSrc = "goldbk.gif";
+                imgSrc = "goldbk.png";
+                gif.src = gifSrc;
+            } else {
+                gifSrc = "kisser.gif";
+                gif.src = gifSrc;
+                imgSrc = "kisserstatic.png";
+            }
+            if (counter >= 1000000000) {
+                gif.style.filter = "hue-rotate(290deg) brightness(1.0)";
+                multiplierText.style.color = "#ff84ba"; 
+                funText.style.color = "#ff84ba"; 
+                document.body.style.backgroundColor = "#314159";
+                counterText.style.color = "#ffffff";
+                console.log(`Billionare State Reached.`);
+            } else if (counter >= 100000000) {
+                gif.style.filter = "hue-rotate(190deg) brightness(1.0)";
+                multiplierText.style.color = "#a1b4ff"; 
+                funText.style.color = "#a1b4ff"; 
+                document.body.style.backgroundColor = "#030851";
+                counterText.style.color = "#ffffff";
+                console.log(`Blurple State Reached.`);
+            } else if (counter >= 10000000) {
+                gif.style.filter = "hue-rotate(170deg) brightness(1.0)";
+                multiplierText.style.color = "#00aaff"; 
+                funText.style.color = "#00aaff"; 
+                document.body.style.backgroundColor = "#204b61";
+                counterText.style.color = "#ffffff";
+                console.log(`Sapphire State Reached.`);
+            } else if (counter >= 1000000) {
+                gif.style.filter = "hue-rotate(100deg) brightness(1)";
+                multiplierText.style.color = "#00fda1"; 
+                funText.style.color = "#00fda1"; 
+                document.body.style.backgroundColor = "#003c00";
+                counterText.style.color = "#ffffff";
+                console.log(`Emerald State Reached.`);
+            } else if (counter >= 100000) {
+                gif.style.filter = "hue-rotate(200deg) brightness(1.2)";
+                multiplierText.style.color = "#ebcbff";
+                funText.style.color = "#ebcbff"; 
+                document.body.style.backgroundColor = "#3c0052";
+                counterText.style.color = "#ffffff";
+                console.log(`Amethyst State Reached.`);
+            } else if (counter >= 50000) {
+                gif.style.filter = "hue-rotate(305deg) brightness(1.2)";
+                multiplierText.style.color = "#FF0000";
+                funText.style.color = "#FF0000"; 
+                document.body.style.backgroundColor = "#fcfefc";
+                counterText.style.color = "#000000";
+                console.log(`Ruby State Reached.`);
+            } else if (counter >= 25000) {
+                gif.style.filter = "hue-rotate(150deg) brightness(1.0)";
+                multiplierText.style.color = "#008d87";
+                funText.style.color = "#008d87"; 
+                document.body.style.backgroundColor = "#fcfefc";
+                counterText.style.color = "#000000";
+                console.log(`Diamond State Reached.`);
+            } else if (counter >= 10000) {
+                gif.style.filter = "grayscale(100%) brightness(0.8)";
+                multiplierText.style.color = "#999999";
+                funText.style.color = "#999999"; 
+                document.body.style.backgroundColor = "#fcfefc";
+                counterText.style.color = "#000000";
+                console.log(`Metal State Reached.`);
+            } else if (counter > 1000 || goldenClicks > 32) {
+                multiplierText.style.color = "#b8860b";
+                funText.style.color = "#b8860b"; 
+                gif.style.filter = "hue-rotate(350deg) brightness(1.1)";
+                document.body.style.backgroundColor = "#fcfefc";
+                counterText.style.color = "#000000";
+                console.log(`Golden State Reached.`);
+            } else if (counter < 1000) { 
+                gif.style.filter = "hue-rotate(0deg) brightness(1.0)";
+                document.body.style.backgroundColor = "#fcfefc";
+                multiplierText.style.color = "#ff1493";
+                funText.style.color = "#ff1493"; 
+                counterText.style.color = "#000000";
+                console.log(`Normal State Reached.`);
+            }
+        }
+        // easy way to create fallin items
+        let goldenClicks = 0;
+        let specialEvent1Ran = false;
+        function createFallingItem(src, minMultiplier, maxMultiplier, duration, chance = 0.1) {
+            if (Math.random() < chance) {
+                const fallingItem = document.createElement('img');
+                fallingItem.src = src;
+                fallingItem.classList.add('falling-gif');
+                fallingItem.style.left = `${Math.random() * window.innerWidth}px`;
+                fallingItem.style.top = `-100px`;
+                document.body.appendChild(fallingItem);
+                let fallInterval = setInterval(() => {
+                    const rect = fallingItem.getBoundingClientRect();
+                    if (rect.top >= window.innerHeight) {
+                        clearInterval(fallInterval);
+                        fallingItem.remove();
+                    } else {
+                        fallingItem.style.top = `${rect.top + 3}px`;
+                    }
+                }, 10);
+                fallingItem.addEventListener('click', (event) => {
+                    goldenClicks++;
+                    const addedMultiplier = Math.floor(Math.random() * (maxMultiplier - minMultiplier + 1)) + minMultiplier;
+                    console.log(`Golden Boykisser Clicked, Clicks: ${goldenClicks}, Multiplier: x${addedMultiplier}`);
+                    clickMultiplier += addedMultiplier;
+                    multiplierText.textContent = `mutlipler: x${clickMultiplier}`;
+                    audio.currentTime = 0;
+                    audio.muted = false;
+                    audio.play().catch(err => console.error("Audio playback failed:", err));
+                    setTimeout(() => {
+                        if (!clickMultiplierUpgradeActive) {
+                            clickMultiplier -= addedMultiplier;
+                            multiplierText.textContent = `mutlipler: x${clickMultiplier}`;
+                        }
+                    }, duration);
+                    fallingItem.remove();
+                    activateEffect(duration / 1000);
+                    checkElementClickAchievements("falling-gif");
+                    // Special Dialogue
+                    goldenDialogue()
+                });
+            }
+        }
+        setInterval(() => {
+            createFallingItem("goldbk.png", 2, 4, 15000, 0.1);
+            // createFallingItem(src, minMultiplier, maxMultiplier, duration, chance = 0.1) {
+        }, 1000);
+        function activateEffect(duration) {
+            effectActive = true;
+            effectTimer = duration;
+            progressBarContainer.style.display = 'block';
+            let interval = setInterval(() => {
+                let progress = (effectTimer / duration) * 100;
+                progressBar.style.width = `${progress}%`;
+                effectTimer--;
+                if (effectTimer < 0) {
+                    clearInterval(interval);
+                    progressBarContainer.style.display = 'none';
+                    effectActive = false;
+                }
+            }, 1000);
+        }
+        function updateCounterText() {
+            let displayCounter = counter.toFixed(3);
+            if (displayCounter.endsWith('.000')) displayCounter = displayCounter.replace('.000', '');
+            else displayCounter = displayCounter.replace(/(\.0+|(?<=\.\d)0+)$/, '');
+            counterText.innerHTML = `cliks: ${displayCounter}<br>${counter >= 100 ? `:${'3'.repeat(Math.min(Math.floor(counter / 100), 10))}` : ''}`;
+        }
+        // DIALOGUE??????
+        let currentMilestone = 0;
+        const milestones = [10, 50, 100, 500, 1000, 2000, 5000, 10000, 20000, 50000, 69000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, 20000000, 50000000, 100000000, 200000000];  
+        const dialogues = [  
+            "the boykisser stares at you with a smug grin.",  // milestone 10
+            "nyan nyan~ keep clicking, or else... >:3",      // milestone 50
+            "a soft purr echoes from the boykisser. more clicks, human.",  // milestone 100
+            "something sparkles in the distance... it's a trap, maybe.",  // milestone 500
+            "whoa! the boykisser is gold now! is that a flex?",  // milestone 1,000
+            "the cat gives you a weird look... did you mess up?",  // milestone 2,000
+            "the boykisser seems oddly proud of your clicking skills.",  // milestone 5,000
+            "you hear the faint sound of a tiny meow... or is it a roar?",  // milestone 10,000
+            "the boykisser is watching you like a hawk... or a cat.",  // milestone 20,000 
+            "are you sure you're not a cat whisperer? the boykisser's getting weird.",  // milestone 50,000 
+            "hey, it's the narrator! 69,000 cliks? nice!",  // milestone 69,000
+            "uh oh, the boykisser might be *evolving*... is this good?",  // milestone 100,000 
+            "congratulations, the boykisser is now a *legend*... no pressure, right?",  // milestone 200,000 
+            "everything feels... a bit too magical right now. should you keep clicking?",  // milestone 500,000 
+            "the boykisser licks its paw like it's in a shampoo commercial.",  // milestone 1,000,000 
+            "there's an odd sense of achievement in the air... or maybe it's just the cat.",  // milestone 2,000,000 
+            "the boykisser's eyes sparkle like it knows something you don't.",  // milestone 5,000,000 
+            "you're starting to feel like you and the boykisser are one... uh oh.",  // milestone 10,000,000 
+            "the boykisser says something, but it's just *meow* in a really serious tone.",  // milestone 20,000,000 
+            "the boykisser's form is shifting... it's like the cat's been to space.",  // milestone 50,000,000 
+            "wait, is there a shadow behind the boykisser? you don't wanna know.",  // milestone 100,000,000 
+            "the boykisser looks at you, like it's about to say something profound... but it doesn't.",  // milestone 200,000,000 
+        ];
+        function goldenDialogue() {
+            const dialogueText = document.getElementById("dialogueText");
+            const goldenDialogues = {
+                1: 'whoa... did a shiny boykisser just fall from the sky? what\'s going on?',
+                3: 'it\'s getting brighter... is this some sort of cosmic event? keep clicking!',
+                5: 'this is no ordinary boykisser... it\'s glowing with mysterious golden energy. what does it all mean?',
+                7: 'the sky seems to have opened up for this one. what kind of secret is this golden boykisser hiding?',
+                10: 'it\'s almost as if the universe is guiding you to this moment. what will happen next?',
+                30: 'something is about to happen... i can feel it...',
+                31: 'the intensity is building...',
+                32: 'it looks like something big is about to happen if you clik another falling boykisser..',
+            };
+            if (goldenClicks in goldenDialogues) {
+                dialogueText.innerText = goldenDialogues[goldenClicks];
+                dialogueText.style.color = '#ffeea1';
+            } else if (goldenClicks > 32 && !specialEvent1Ran) {
+                dialogueText.innerText = 'A mysterious force has granted you a 3x click boost!';
+                dialogueText.style.color = '#ffeea1';
+                clickMultiplier *= 3;
+                multiplierText.textContent = `multiplier: x${clickMultiplier}`;
+                specialEvent1Ran = true;
+            }
+        }
+        // SAVING SYSTEM [might be buggy]
+        const getGameState = () => ({
+            counter,
+            clickMultiplier,
+            clickMultiplierLevel,
+            autoClickerAmount,
+            autoClickers,
+            achievements,
+            currentMilestone,
+            dialogueText: document.getElementById("dialogueText").innerText,
+            musicPlays,
+            goldenClicks,
+            specialEvent1Ran,
+        });
+        const setGameState = (savedState) => {
+            if (!savedState) return;
+            counter = savedState.counter || 0;
+            clickMultiplier = savedState.clickMultiplier || 1;
+            clickMultiplierLevel = savedState.clickMultiplierLevel || 1;
+            autoClickerAmount = savedState.autoClickerAmount || 0;
+            achievements = savedState.achievements || achievements;
+            currentMilestone = savedState.currentMilestone || 0;
+            musicPlays = savedState.musicPlays;
+            goldenClicks = savedState.goldenClicks;
+            specialEvent1Ran = savedState.specialEvent1Ran;
+            document.getElementById("dialogueText").innerText =
+                savedState.dialogueText || "boyclicker; created by @doctoon on discord :3";
+            updateUI();
+        };
+        const updateUI = () => {
+            updateCounterText();
+            multiplierText.textContent = `mutlipler: x${clickMultiplier}`;
+            const autoClickerCost = Math.floor(20 * Math.pow(1.2, autoClickerAmount));
+            const clickMultiplierCost = Math.floor(50 * Math.pow(1.3, clickMultiplierLevel));
+            document.getElementById("auto-clicker-button").textContent = `autp clikr (x${autoClickerAmount}) - Cost: ${autoClickerCost}`;
+            document.getElementById("auto-clicker-button").setAttribute("data-cost", autoClickerCost);
+            document.getElementById("click-multiplier-button").textContent = `clik multiplr (x${clickMultiplierLevel}) - Cost: ${clickMultiplierCost}`;
+            document.getElementById("click-multiplier-button").setAttribute("data-cost", clickMultiplierCost);
+        };
+        function saveGame() {
+            localStorage.setItem("gameSave", JSON.stringify(getGameState()));
+            if (autoClickerAmount > 0) startAutoClicking();
+            console.log("Progress saved Successfully.");
+        }
+        function loadGame() {
+            const savedState = JSON.parse(localStorage.getItem("gameSave"));
+            setGameState(savedState);
+            console.log("Progress loaded Successfully.");
+        }
+        setInterval(() => {
+            saveGame(); 
+            if (specialEvent1Ran === true) { multiplierText.style.color = '#b8860b'; }
+        }, 10000);
+        function prestiege() { localStorage.removeItem('gameSave'); location.reload(); }
+        // SAVING - '.txt' File support
+        function saveGameToFile() {
+            const gameState = JSON.stringify({
+                counter,
+                clickMultiplier,
+                clickMultiplierLevel,
+                autoClickerAmount,
+                autoClickers,
+                achievements,
+                currentMilestone,
+                dialogueText: document.getElementById("dialogueText").innerText,
+                musicPlays,
+                goldenClicks,
+                specialEvent1Ran,
+            }, null, 4); 
+            const blob = new Blob([gameState], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'gameSave.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            console.log('Game saved to file. Download started.');
+        }
+        function loadGameFromFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.txt';
+            input.style.display = 'none';
+            document.body.appendChild(input);
+            input.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return console.log('No file selected.');
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const savedState = JSON.parse(e.target.result);
+                    loadGameState(savedState);
+                };
+                reader.readAsText(file);
+            });
+            input.click();
+            document.body.removeChild(input);
+            console.log('Select a save file to load.');
+        }
+        function loadGameState(savedState) {
+            if (savedState) {
+                counter = savedState.counter || 0;
+                clickMultiplier = savedState.clickMultiplier || 1;
+                clickMultiplierLevel = savedState.clickMultiplierLevel || 1;
+                autoClickerAmount = savedState.autoClickerAmount || 0;
+                achievements = savedState.achievements || achievements;
+                currentMilestone = savedState.currentMilestone || 0;
+                musicPlays = savedState.musicPlays;
+                goldenClicks = savedState.goldenClicks;
+                specialEvent1Ran = savedState.specialEvent1Ran;
+                document.getElementById("dialogueText").innerText = savedState.dialogueText || "boyclicker; created by @doctoon on discord :3";
+                updateCounterText();
+                multiplierText.textContent = `mutlipler: x${clickMultiplier}`;
+                const autoClickerCost = Math.floor(20 * Math.pow(1.2, autoClickerAmount));
+                const clickMultiplierCost = Math.floor(50 * Math.pow(1.3, clickMultiplierLevel));
+                document.getElementById('auto-clicker-button').textContent = `autp clikr (x${autoClickerAmount}) - Cost: ${autoClickerCost}`;
+                document.getElementById('auto-clicker-button').setAttribute('data-cost', autoClickerCost);
+                document.getElementById('click-multiplier-button').textContent = `clik multiplr (x${clickMultiplierLevel}) - Cost: ${clickMultiplierCost}`;
+                document.getElementById('click-multiplier-button').setAttribute('data-cost', clickMultiplierCost);
+                console.log('Game state loaded from file.');
+            } else {console.log('No valid save data found in the file.');}
+        }
+        // Achievement system 
+        let goldBKClicks = 0;
+        let musicClicks = 0;
+        let achievements = {
+            "1stClik": { unlocked: false, goal: 1, name: "firs clik!!" },
+            "100Cliks": { unlocked: false, goal: 100, name: "firs hundrd cliks :3" },
+            "1000Cliks": { unlocked: false, goal: 1000, name: "YIPEEEE!!!" },
+            "2000Cliks": { unlocked: false, goal: 2000, name: "🤑🤑💲💵💵" },
+            "5000Cliks": { unlocked: false, goal: 5000, name: "caught in 5k.. oh wait... -_-" },
+            "10000Cliks": { unlocked: false, goal: 10000, name: "clik skill? mastered!" },
+            "20000Cliks": { unlocked: false, goal: 20000, name: "20k cliks.. well, that was... fast?" },
+            "50000Cliks": { unlocked: false, goal: 50000, name: "you r almost there.. or are you? *vsauce*" },
+            "69000Cliks": { unlocked: false, goal: 69000, name: "69k (nice)" },
+            "100000Cliks": { unlocked: false, goal: 100000, name: "a hundred.. thousand!" },
+            "200000Cliks": { unlocked: false, goal: 200000, name: "100k: the sequel" }, 
+            "500000Cliks": { unlocked: false, goal: 500000, name: "mill.." },
+            "1000000Cliks": { unlocked: false, goal: 1000000, name: "..ionair" },
+            "2000000Cliks": { unlocked: false, goal: 2000000, name: "double milinoare" },
+            "5000000Cliks": { unlocked: false, goal: 5000000, name: "fiv milion airs" },
+            "10000000Cliks": { unlocked: false, goal: 10000000, name: "tne milionrs" },
+            "20000000Cliks": { unlocked: false, goal: 20000000, name: "twenty milinoars" },
+            "50000000Cliks": { unlocked: false, goal: 50000000, name: "fifty milions" },
+            "100000000Cliks": { unlocked: false, goal: 100000000, name: "hundred milnionaires" },
+            "200000000Cliks": { unlocked: false, goal: 200000000, name: "two hundred milnionaires" },
+            "1000000000Cliks": { unlocked: false, goal: 1000000000, name: "+1 boylionare unlocked" },
+            "10000000000Cliks": { unlocked: false, goal: 10000000000, name: "merry clikmas!!! 🎅" },
+            // SPECIAL - Music
+            "PlayMusic": { unlocked: false, goal2: 1, name: "musik yayyyy", type: "elementClick", elementId: "play-music-button" },
+            // SPECIAL - Golden
+            "GoldenKiss1": { unlocked: false, goal2: 1, name: "goldn boykisr", type: "elementClick", elementId: "falling-gif" },
+            "GoldenKiss3": { unlocked: false, goal2: 3, name: "the golden >.<", type: "elementClick", elementId: "falling-gif" },
+            "GoldenKiss5": { unlocked: false, goal2: 5, name: "omg so shiny", type: "elementClick", elementId: "falling-gif" },
+            "GoldenKiss10": { unlocked: false, goal2: 10, name: "need.. more... glow...", type: "elementClick", elementId: "falling-gif" },
+            "GoldenKiss25": { unlocked: false, goal2: 25, name: "purrfect..", type: "elementClick", elementId: "falling-gif" },
+            "GoldenKiss30": { unlocked: false, goal2: 30, name: "THREE...", type: "elementClick", elementId: "falling-gif" },
+            "GoldenKiss31": { unlocked: false, goal2: 31, name: "TWO...", type: "elementClick", elementId: "falling-gif" },
+            "GoldenKiss32": { unlocked: false, goal2: 32, name: "ONE...", type: "elementClick", elementId: "falling-gif" },
+            "GoldenKiss33": { unlocked: false, goal2: 33, name: "LORE?????", type: "elementClick", elementId: "falling-gif" },
+            // SPECIAL - Upgrades
+            // None Yet....
+        };
+        function checkAchievements(clickCount) {
+            for (let key in achievements) {
+                const achievement = achievements[key];
+                if (!achievement.unlocked && clickCount >= achievement.goal) {
+                    achievement.unlocked = true;
+                    showAchievement(achievement);
+                }
+            }
+        }
+        function checkElementClickAchievements(clickedElementId) {
+        for (let key in achievements) {
+            const achievement = achievements[key];
+            if (!achievement.unlocked && achievement.type === "elementClick" && clickedElementId === achievement.elementId) {
+                if (achievement.elementId === "play-music-button" || achievement.elementId === "mute-music-button") {
+                    if (achievement.musicClicks === undefined) achievement.musicClicks = 0;
+                    achievement.musicClicks++;
+                }
+                if (achievement.elementId === "falling-gif") {
+                    if (!achievement.goldBKClicks) achievement.goldBKClicks = 0;
+                    achievement.goldBKClicks++;
+                }
+                const currentClicks = achievement.elementId === "play-music-button" ? achievement.musicClicks : achievement.goldBKClicks;
+                    if (currentClicks >= achievement.goal2) {
+                        achievement.unlocked = true;
+                        showAchievement(achievement);
+                    }
+                }
+            }
+        }
+        function showAchievement(achievement) {
+            multiplierText.textContent = `achievmnt unlocd: ${achievement.name}`;
+            console.log(`Achievement unlocked: ${achievement.name}`);
+            const achievementSound = new Audio('achievement.mp3');
+            achievementSound.play();
+            setTimeout(() => {
+                multiplierText.textContent = `multiplier: x${clickMultiplier}`;
+                if (!specialEvent1Ran) {multiplierText.style.color = '#ff1493';}
+            }, 2178);
+        }
+
+        // VISUALS
+        // self explandory
+        function scaleAndRotateEffect(e) {
+            const rect = gif.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const angle = Math.atan2(mouseY - rect.height / 2, mouseX - rect.width / 2) * (180 / Math.PI);
+            gif.style.transform = `scale(1.1) rotate(${angle * 0.1}deg)`;
+            setTimeout(() => {gif.style.transform = "scale(1) rotate(0deg)";}, 200);
+        }
+        // the text that has a chance to appear and says stuff like "uwu"
+        function animateFunText() {
+            const randomText = funTexts[Math.floor(Math.random() * funTexts.length)];
+            funText.textContent = randomText;
+            funText.style.opacity = 1;
+            funText.style.transform = "scale(1.5)";
+            setTimeout(() => {funText.style.opacity = 0; funText.style.transform = "scale(1)";}, 600);
+        }
+
+        // UPGRADE/SHOP SYSTEM [needs revamp]
+        let clickMultiplierUpgradeActive = false, clickMultiplierLevel = 1
+        function startAutoClicking() {
+            if (isAutoClickerRunning) return;
+            isAutoClickerRunning = true;
+            autoClickerInterval = setInterval(() => {
+                counter += autoClickerAmount;
+                updateCounterText();
+            }, 1000);
+        }
+        function handleUpgrade(button, upgradeType) {
+            const cost = parseInt(button.getAttribute('data-cost'));
+            const upgradeFailAudio = new Audio('UpgradeFail.mp3'), upgradeSuccessAudio = new Audio('Upgrade.mp3');
+            if (counter < cost) return upgradeFailAudio.play();
+            counter -= cost;
+            updateCounterText();
+            upgradeSuccessAudio.play();
+            if (upgradeType === 'autoClicker') {
+                autoClickerAmount++;
+                button.setAttribute('data-cost', Math.floor(20 * Math.pow(1.2, autoClickerAmount)));
+                button.textContent = `autp clikr (x${autoClickerAmount}) - Cost: ${button.getAttribute('data-cost')}`;
+                if (autoClickerAmount === 1) startAutoClicking();
+            } else if (upgradeType === 'clickMultiplier') {
+                clickMultiplierLevel++;
+                clickMultiplier++;
+                multiplierText.textContent = `mutlipler: x${clickMultiplier}`;
+                button.setAttribute('data-cost', Math.floor(50 * Math.pow(1.3, clickMultiplierLevel)));
+                button.textContent = `clik multiplr (x${clickMultiplierLevel}) - Cost: ${button.getAttribute('data-cost')}`;
+            }
+        }
+        function createShopButton(id, text, cost, upgradeType) {
+            const button = document.createElement('button');
+            button.id = id;
+            button.style.cssText = 'font-size:20px;margin-bottom:10px;cursor:pointer;';
+            button.textContent = text;
+            button.setAttribute('data-cost', cost);
+            button.addEventListener('click', () => handleUpgrade(button, upgradeType));
+            return button;
+        }
+        function createShop() {
+            const shopContainer = document.createElement('div');
+            shopContainer.style.cssText = 'text-align:center;margin-top:20px;';
+            shopContainer.className = 'shop-container';
+            const autoClickerButton = createShopButton(
+                'auto-clicker-button',
+                `autp clikr (x${autoClickerAmount}) - Cost: ${20 * autoClickerAmount}`,
+                20 * autoClickerAmount,
+                'autoClicker'
+            );
+            const clickMultiplierButton = createShopButton(
+                'click-multiplier-button',
+                `clik multiplr (x${clickMultiplierLevel}) - Cost: ${50 * clickMultiplierLevel}`,
+                50 * clickMultiplierLevel,
+                'clickMultiplier'
+            );
+            shopContainer.append(autoClickerButton, clickMultiplierButton);
+            document.body.appendChild(shopContainer);
+        }
+        // RUN ON LOAD
+        createShop();
+        loadGame();
+        updateStyles();
+        goldenDialogue();
+    </script>
+</body>
+</html>
